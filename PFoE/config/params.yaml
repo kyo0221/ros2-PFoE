@@ -8,8 +8,7 @@ joy_node:
 # Feature extractor node
 feature_extractor:
   ros__parameters:
-    image_size: 85
-    use_gpu: true
+    # No parameters needed (GPU required, image size fixed to 85x85)
 
 # Joy controller node
 joy_controller:
