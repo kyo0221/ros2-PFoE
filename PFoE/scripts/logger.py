@@ -8,7 +8,7 @@ Saves data to ROS2 bag file and publishes Event messages.
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
-from std_msgs.msg import Float32MultiArray, Bool
+from std_msgs.msg import Float32MultiArray, Bool, String
 from pfoe_msg.msg import Event
 from rclpy.serialization import serialize_message
 import rosbag2_py
@@ -34,10 +34,12 @@ class Logger(Node):
         self.bag_writer = None
         self.current_feature = []
         self.current_cmd_vel = Twist()
+        self.current_bag_path = ""
 
         # Publishers
         self.event_pub = self.create_publisher(Event, 'event', 10)
         self.teaching_mode_pub = self.create_publisher(Bool, 'teaching_mode', 10)
+        self.bag_path_pub = self.create_publisher(String, 'bag_path', 10)
 
         # Subscribers
         self.feature_sub = self.create_subscription(
@@ -115,11 +117,8 @@ class Logger(Node):
         )
         self.bag_writer.create_topic(topic_info)
 
-        # Store bag path as parameter
-        self.declare_parameter('current_bag_file', bag_path)
-        self.set_parameters([rclpy.parameter.Parameter('current_bag_file',
-                                                        rclpy.Parameter.Type.STRING,
-                                                        bag_path)])
+        # Store current bag path
+        self.current_bag_path = bag_path
 
         self.get_logger().info(f'Started recording to: {bag_path}')
 
@@ -129,6 +128,13 @@ class Logger(Node):
             del self.bag_writer
             self.bag_writer = None
             self.get_logger().info('Stopped recording')
+
+            # Publish bag path for replay node
+            if self.current_bag_path:
+                bag_path_msg = String()
+                bag_path_msg.data = self.current_bag_path
+                self.bag_path_pub.publish(bag_path_msg)
+                self.get_logger().info(f'Published bag path: {self.current_bag_path}')
 
     def record_event(self):
         """Record current state as Event message"""

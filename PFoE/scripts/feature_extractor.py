@@ -91,12 +91,12 @@ class FeatureExtractor(Node):
         """
         Preprocess image for PlaceNet model
         Args:
-            cv_image: OpenCV image (BGR)
+            cv_image: OpenCV image (BGRA)
         Returns:
             Preprocessed tensor ready for model input
         """
-        # Convert BGR to RGB
-        rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+        # Convert BGRA to RGB (drop alpha channel and reorder)
+        rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGRA2RGB)
 
         # Center crop to square
         square_image = self.center_crop_square(rgb_image)
@@ -136,24 +136,21 @@ class FeatureExtractor(Node):
     def image_callback(self, msg):
         """
         Callback for incoming camera images
+        Assumes input encoding is bgra8
         """
-        try:
-            # Convert ROS Image to OpenCV format
-            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        # Convert ROS Image to OpenCV format (bgra8)
+        cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgra8')
 
-            # Preprocess
-            image_tensor = self.preprocess_image(cv_image)
+        # Preprocess
+        image_tensor = self.preprocess_image(cv_image)
 
-            # Extract feature
-            feature = self.extract_feature(image_tensor)
+        # Extract feature
+        feature = self.extract_feature(image_tensor)
 
-            # Publish feature
-            feature_msg = Float32MultiArray()
-            feature_msg.data = feature.tolist()
-            self.feature_pub.publish(feature_msg)
-
-        except Exception as e:
-            self.get_logger().error(f'Error processing image: {e}')
+        # Publish feature
+        feature_msg = Float32MultiArray()
+        feature_msg.data = feature.tolist()
+        self.feature_pub.publish(feature_msg)
 
 
 def main(args=None):

@@ -15,6 +15,9 @@ import os
 def generate_launch_description():
     pkg_share = FindPackageShare('pfoe')
 
+    # Path to params.yaml
+    params_file = PathJoinSubstitution([pkg_share, 'config', 'params.yaml'])
+
     # Declare arguments
     use_sim_time_arg = DeclareLaunchArgument(
         'use_sim_time',
@@ -28,20 +31,13 @@ def generate_launch_description():
         description='Path to PlaceNet model file'
     )
 
-    num_particles_arg = DeclareLaunchArgument(
-        'num_particles',
-        default_value='1000',
-        description='Number of particles for pfoe'
-    )
-
     # Joy node (gamepad)
     joy_node = Node(
         package='joy',
         executable='joy_node',
         name='joy_node',
-        parameters=[{
-            'autorepeat_rate': 3.0,
-        }]
+        parameters=[params_file],
+        output='screen'
     )
 
     # Feature extractor
@@ -49,11 +45,10 @@ def generate_launch_description():
         package='pfoe',
         executable='feature_extractor.py',
         name='feature_extractor',
-        parameters=[{
-            'model_path': LaunchConfiguration('model_path'),
-            'image_size': 85,
-            'use_gpu': True,
-        }],
+        parameters=[
+            params_file,
+            {'model_path': LaunchConfiguration('model_path')}
+        ],
         output='screen'
     )
 
@@ -62,15 +57,7 @@ def generate_launch_description():
         package='pfoe',
         executable='joy_controller.py',
         name='joy_controller',
-        parameters=[{
-            'linear_scale': 0.2,
-            'angular_scale': 0.098,  # 3.14/32
-            'button_deadman': 0,
-            'button_level_up': 7,
-            'button_level_down': 6,
-            'axis_linear': 1,
-            'axis_angular': 0,
-        }],
+        parameters=[params_file],
         output='screen'
     )
 
@@ -79,9 +66,7 @@ def generate_launch_description():
         package='pfoe',
         executable='logger.py',
         name='logger',
-        parameters=[{
-            'bag_directory': os.path.expanduser('~/.ros/pfoe_bags'),
-        }],
+        parameters=[params_file],
         output='screen'
     )
 
@@ -90,17 +75,13 @@ def generate_launch_description():
         package='pfoe',
         executable='replay',
         name='replay',
-        parameters=[{
-            'num_particles': LaunchConfiguration('num_particles'),
-            'loop_rate': 10.0,
-        }],
+        parameters=[params_file],
         output='screen'
     )
 
     return LaunchDescription([
         use_sim_time_arg,
         model_path_arg,
-        num_particles_arg,
         joy_node,
         feature_extractor_node,
         joy_controller_node,

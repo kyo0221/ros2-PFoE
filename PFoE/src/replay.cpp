@@ -6,6 +6,7 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "std_msgs/msg/float32_multi_array.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "std_msgs/msg/string.hpp"
 
 #include "pfoe_msg/msg/event.hpp"
 #include "pfoe_msg/msg/pfoe_output.hpp"
@@ -28,7 +29,8 @@ public:
   : Node("replay_node"),
     pf_(1000, &ep_),
     replay_mode_(false),
-    bag_read_(false)
+    bag_read_(false),
+    bag_file_("")
   {
     // Parameters
     this->declare_parameter<int>("num_particles", 1000);
@@ -37,6 +39,7 @@ public:
 
     num_particles_ = this->get_parameter("num_particles").as_int();
     loop_rate_ = this->get_parameter("loop_rate").as_double();
+    bag_file_ = this->get_parameter("bag_file").as_string();
 
     // Publishers
     cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
@@ -48,9 +51,13 @@ public:
       "image_feature", 10,
       std::bind(&ReplayNode::featureCallback, this, std::placeholders::_1));
 
-    replay_mode_sub_ = this->create_subscription<std_msgs::msg::Bool>(
-      "replay_mode", 10,
-      std::bind(&ReplayNode::replayModeCallback, this, std::placeholders::_1));
+    teaching_mode_sub_ = this->create_subscription<std_msgs::msg::Bool>(
+      "teaching_mode", 10,
+      std::bind(&ReplayNode::teachingModeCallback, this, std::placeholders::_1));
+
+    bag_path_sub_ = this->create_subscription<std_msgs::msg::String>(
+      "bag_path", 10,
+      std::bind(&ReplayNode::bagPathCallback, this, std::placeholders::_1));
 
     // Timer for main loop
     auto timer_period = std::chrono::duration<double>(1.0 / loop_rate_);
@@ -72,37 +79,37 @@ private:
     current_observation_.setValues(msg->data);
   }
 
-  void replayModeCallback(const std_msgs::msg::Bool::SharedPtr msg)
+  void bagPathCallback(const std_msgs::msg::String::SharedPtr msg)
   {
-    bool new_mode = msg->data;
+    bag_file_ = msg->data;
+    RCLCPP_INFO(this->get_logger(), "Received bag file path: %s", bag_file_.c_str());
+  }
 
-    if (new_mode && !replay_mode_) {
+  void teachingModeCallback(const std_msgs::msg::Bool::SharedPtr msg)
+  {
+    bool teaching_mode = msg->data;
+    bool new_replay_mode = !teaching_mode;  // Replay mode is inverse of teaching mode
+
+    if (new_replay_mode && !replay_mode_) {
       // Start replay mode
       startReplay();
-    } else if (!new_mode && replay_mode_) {
+    } else if (!new_replay_mode && replay_mode_) {
       // Stop replay mode
       stopReplay();
     }
 
-    replay_mode_ = new_mode;
+    replay_mode_ = new_replay_mode;
   }
 
   void startReplay()
   {
-    std::string bag_file = this->get_parameter("bag_file").as_string();
-
-    if (bag_file.empty()) {
-      // Try to get from logger node parameter
-      try {
-        bag_file = this->get_parameter("current_bag_file").as_string();
-      } catch (const std::exception & e) {
-        RCLCPP_ERROR(this->get_logger(), "No bag file specified");
-        return;
-      }
+    if (bag_file_.empty()) {
+      RCLCPP_ERROR(this->get_logger(), "No bag file specified. Please complete a teaching run first.");
+      return;
     }
 
-    RCLCPP_INFO(this->get_logger(), "Reading episodes from: %s", bag_file.c_str());
-    readEpisodes(bag_file);
+    RCLCPP_INFO(this->get_logger(), "Reading episodes from: %s", bag_file_.c_str());
+    readEpisodes(bag_file_);
     bag_read_ = true;
 
     // Initialize particle filter
@@ -242,6 +249,7 @@ private:
 
   bool replay_mode_;
   bool bag_read_;
+  std::string bag_file_;
 
   int num_particles_;
   double loop_rate_;
@@ -250,7 +258,8 @@ private:
   rclcpp::Publisher<pfoe_msg::msg::PfoeOutput>::SharedPtr pfoe_out_pub_;
 
   rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr feature_sub_;
-  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr replay_mode_sub_;
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr teaching_mode_sub_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr bag_path_sub_;
 
   rclcpp::TimerBase::SharedPtr timer_;
 };
