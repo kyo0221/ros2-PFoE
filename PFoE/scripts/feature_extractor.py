@@ -20,14 +20,10 @@ class FeatureExtractor(Node):
 
         package_dir = get_package_share_directory('PFoE')
         model_path = os.path.join(package_dir, 'weights', 'placenet.pt')
-        self.get_logger().info(f'Loading model from: {model_path}')
-
+        
         self.device = torch.device('cuda')
-        self.get_logger().info(f'Using device: {self.device}')
-
         self.model = torch.jit.load(model_path, map_location=self.device)
         self.model.eval()
-        self.get_logger().info('Model loaded successfully')
         self.bridge = CvBridge()
 
         self.feature_pub = self.create_publisher(Float32MultiArray, 'image_feature', 10)
@@ -37,6 +33,9 @@ class FeatureExtractor(Node):
         self.mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
         self.std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 
+        self.get_logger().info(f'Loading model from: {model_path}')
+        self.get_logger().info(f'Using device: {self.device}')
+        self.get_logger().info('Model loaded successfully')
         self.get_logger().info('Feature Extractor initialized')
 
     def center_crop_square(self, image):
