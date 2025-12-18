@@ -15,8 +15,8 @@ feature_extractor:
 joy_controller:
   ros__parameters:
     linear_scale: 0.8         # Maximum linear velocity [m/s]
-    angular_scale: 0.098      # Maximum angular velocity [rad/s] (≈π/32)
-    button_mode_toggle: 7     # Button to toggle teaching/replay mode
+    angular_scale: 1.0      # Maximum angular velocity [rad/s] (≈π/32)
+    button_mode_toggle: 6     # Button to toggle teaching/replay mode
     axis_linear: 1            # Joystick axis for linear velocity (forward/backward)
     axis_angular: 3           # Joystick axis for angular velocity (yaw control)
 

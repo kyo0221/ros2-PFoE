@@ -39,6 +39,7 @@ class Logger(Node):
         # Publishers
         self.event_pub = self.create_publisher(Event, 'event', 10)
         self.teaching_mode_pub = self.create_publisher(Bool, 'teaching_mode', 10)
+        self.replay_mode_pub = self.create_publisher(Bool, 'replay_mode', 10)
         self.bag_path_pub = self.create_publisher(String, 'bag_path', 10)
 
         # Subscribers
@@ -82,9 +83,24 @@ class Logger(Node):
         if new_mode and not self.teaching_mode:
             # Start teaching mode
             self.start_recording()
+            # Stop replay mode
+            replay_msg = Bool()
+            replay_msg.data = False
+            self.replay_mode_pub.publish(replay_msg)
         elif not new_mode and self.teaching_mode:
             # Stop teaching mode
             self.stop_recording()
+            # Start replay mode
+            replay_msg = Bool()
+            replay_msg.data = True
+            self.replay_mode_pub.publish(replay_msg)
+            # Publish bag file path for replay node
+            if self.current_bag_path:
+                from std_msgs.msg import String
+                bag_path_msg = String()
+                bag_path_msg.data = self.current_bag_path
+                self.bag_path_pub.publish(bag_path_msg)
+                self.get_logger().info(f'Published bag path for replay: {self.current_bag_path}')
 
         self.teaching_mode = new_mode
 

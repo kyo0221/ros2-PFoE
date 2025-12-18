@@ -17,11 +17,11 @@ class JoyController(Node):
         super().__init__('joy_controller')
 
         # Parameters
-        self.declare_parameter('linear_scale', 0.2)         # Maximum linear velocity [m/s]
-        self.declare_parameter('angular_scale', 0.098)      # Maximum angular velocity [rad/s] (≈π/32)
-        self.declare_parameter('button_mode_toggle', 7)     # Button to toggle teaching/replay mode
+        self.declare_parameter('linear_scale', 0.8)         # Maximum linear velocity [m/s]
+        self.declare_parameter('angular_scale', 1.0)      # Maximum angular velocity [rad/s] (≈π/32)
+        self.declare_parameter('button_mode_toggle', 6)     # Button to toggle teaching/replay mode
         self.declare_parameter('axis_linear', 1)            # Axis for linear velocity
-        self.declare_parameter('axis_angular', 0)           # Axis for angular velocity
+        self.declare_parameter('axis_angular', 3)           # Axis for angular velocity
 
         # Get parameters
         self.linear_scale = self.get_parameter('linear_scale').value

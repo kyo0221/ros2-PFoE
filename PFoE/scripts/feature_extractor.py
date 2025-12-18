@@ -91,12 +91,12 @@ class FeatureExtractor(Node):
         """
         Preprocess image for PlaceNet model
         Args:
-            cv_image: OpenCV image (BGRA)
+            cv_image: OpenCV image (BGR format)
         Returns:
             Preprocessed tensor ready for model input
         """
-        # Convert BGRA to RGB (drop alpha channel and reorder)
-        rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGRA2RGB)
+        # Convert BGR to RGB
+        rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
 
         # Center crop to square
         square_image = self.center_crop_square(rgb_image)
@@ -136,21 +136,51 @@ class FeatureExtractor(Node):
     def image_callback(self, msg):
         """
         Callback for incoming camera images
-        Assumes input encoding is bgra8
+        Handles bgra8, rgba8, rgb8, and bgr8 encodings
         """
-        # Convert ROS Image to OpenCV format (bgra8)
-        cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgra8')
+        try:
+            # Convert ROS Image to OpenCV format without encoding conversion
+            # Use passthrough to avoid CvBridge conversion issues
+            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
 
-        # Preprocess
-        image_tensor = self.preprocess_image(cv_image)
+            # Check if image is valid
+            if cv_image is None or cv_image.size == 0:
+                self.get_logger().error('Received empty image')
+                return
 
-        # Extract feature
-        feature = self.extract_feature(image_tensor)
+            # Handle different encodings - convert to BGR format expected by preprocess_image
+            if msg.encoding == 'bgra8':
+                # BGRA -> BGR (drop alpha channel)
+                cv_image_bgr = cv_image[:, :, :3]  # Drop alpha channel, keep BGR
+            elif msg.encoding == 'rgba8':
+                # RGBA -> BGR
+                cv_image_bgr = cv2.cvtColor(cv_image[:, :, :3], cv2.COLOR_RGB2BGR)
+            elif msg.encoding == 'rgb8':
+                # RGB -> BGR
+                cv_image_bgr = cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR)
+            elif msg.encoding == 'bgr8':
+                # Already BGR
+                cv_image_bgr = cv_image
+            else:
+                self.get_logger().warn(f'Unexpected encoding: {msg.encoding}, attempting to use as-is')
+                cv_image_bgr = cv_image
 
-        # Publish feature
-        feature_msg = Float32MultiArray()
-        feature_msg.data = feature.tolist()
-        self.feature_pub.publish(feature_msg)
+            # Preprocess (expects BGR image)
+            image_tensor = self.preprocess_image(cv_image_bgr)
+
+            # Extract feature
+            feature = self.extract_feature(image_tensor)
+
+            # Publish feature
+            feature_msg = Float32MultiArray()
+            feature_msg.data = feature.tolist()
+            self.feature_pub.publish(feature_msg)
+
+        except Exception as e:
+            import traceback
+            self.get_logger().error(f'Error in image_callback: {e}')
+            self.get_logger().error(f'Traceback: {traceback.format_exc()}')
+            self.get_logger().error(f'Message encoding: {msg.encoding}, size: {msg.width}x{msg.height}')
 
 
 def main(args=None):
@@ -162,7 +192,9 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     except Exception as e:
+        import traceback
         print(f'Error in feature_extractor: {e}')
+        print(f'Traceback:\n{traceback.format_exc()}')
     finally:
         if rclpy.ok():
             rclpy.shutdown()
