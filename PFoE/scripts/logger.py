@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-"""
-Logger Node
-Records image features and robot actions during teaching phase.
-Saves data to ROS2 bag file and publishes Event messages.
-"""
-
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
@@ -20,47 +13,25 @@ class Logger(Node):
     def __init__(self):
         super().__init__('logger')
 
-        # Parameters
         self.declare_parameter('bag_directory', os.path.expanduser('~/.ros/pfoe_bags'))
-
-        # Get parameters
         self.bag_directory = self.get_parameter('bag_directory').value
 
-        # Create bag directory if it doesn't exist
         os.makedirs(self.bag_directory, exist_ok=True)
 
-        # State variables
         self.teaching_mode = False
         self.bag_writer = None
         self.current_feature = []
         self.current_cmd_vel = Twist()
         self.current_bag_path = ""
 
-        # Publishers
         self.event_pub = self.create_publisher(Event, 'event', 10)
         self.teaching_mode_pub = self.create_publisher(Bool, 'teaching_mode', 10)
         self.replay_mode_pub = self.create_publisher(Bool, 'replay_mode', 10)
         self.bag_path_pub = self.create_publisher(String, 'bag_path', 10)
 
-        # Subscribers
-        self.feature_sub = self.create_subscription(
-            Float32MultiArray,
-            'image_feature',
-            self.feature_callback,
-            10
-        )
-        self.cmd_vel_sub = self.create_subscription(
-            Twist,
-            'cmd_vel',
-            self.cmd_vel_callback,
-            10
-        )
-        self.teaching_mode_sub = self.create_subscription(
-            Bool,
-            'teaching_mode_toggle',
-            self.teaching_mode_toggle_callback,
-            10
-        )
+        self.feature_sub = self.create_subscription(Float32MultiArray, 'image_feature', self.feature_callback, 10)
+        self.cmd_vel_sub = self.create_subscription(Twist, 'cmd_vel', self.cmd_vel_callback, 10)
+        self.teaching_mode_sub = self.create_subscription(Bool, 'teaching_mode_toggle', self.teaching_mode_toggle_callback, 10)
 
         # Timer for periodic recording (10 Hz)
         self.timer = self.create_timer(0.1, self.record_event)
