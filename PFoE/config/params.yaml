@@ -7,13 +7,11 @@ feature_extractor:
 
 joy_controller:
   ros__parameters:
-    linear_scale: 0.2
-    angular_scale: 0.098  # 3.14/32
-    button_deadman: 0
-    button_level_up: 7
-    button_level_down: 6
-    axis_linear: 1
-    axis_angular: 0
+    linear_scale: 0.2      # Maximum linear velocity [m/s]
+    angular_scale: 0.098   # Maximum angular velocity [rad/s] (≈π/32)
+    button_deadman: 0      # Deadman button (must be pressed to enable control)
+    axis_linear: 1         # Joystick axis for linear velocity (forward/backward)
+    axis_angular: 0        # Joystick axis for angular velocity (left/right)
 
 logger:
   ros__parameters:
