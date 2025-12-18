@@ -1,0 +1,25 @@
+# PFoE System Parameters
+
+feature_extractor:
+  ros__parameters:
+    image_size: 85
+    use_gpu: true
+
+joy_controller:
+  ros__parameters:
+    linear_scale: 0.2
+    angular_scale: 0.098  # 3.14/32
+    button_deadman: 0
+    button_level_up: 7
+    button_level_down: 6
+    axis_linear: 1
+    axis_angular: 0
+
+logger:
+  ros__parameters:
+    bag_directory: "~/.ros/pfoe_bags"
+
+replay:
+  ros__parameters:
+    num_particles: 1000
+    loop_rate: 10.0
