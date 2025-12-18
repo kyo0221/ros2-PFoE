@@ -59,7 +59,7 @@ class FeatureExtractor(Node):
         self.feature_pub = self.create_publisher(Float32MultiArray, 'image_feature', 10)
         self.image_sub = self.create_subscription(
             Image,
-            '/camera/image_raw',
+            '/zed/zed_node/rgb/image_rect_color',
             self.image_callback,
             10
         )
