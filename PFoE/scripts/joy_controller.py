@@ -9,14 +9,14 @@ class JoyController(Node):
     def __init__(self):
         super().__init__('joy_controller')
 
-        self.declare_parameter('linear_scale', 0.8)
-        self.declare_parameter('angular_scale', 1.0)
+        self.declare_parameter('linear_vel', 0.8)
+        self.declare_parameter('angular_vel', 1.0)
         self.declare_parameter('button_mode_toggle', 6)
         self.declare_parameter('axis_linear', 1)
         self.declare_parameter('axis_angular', 3)
 
-        self.linear_scale = self.get_parameter('linear_scale').value
-        self.angular_scale = self.get_parameter('angular_scale').value
+        self.linear_scale = self.get_parameter('linear_vel').value
+        self.angular_scale = self.get_parameter('angular_vel').value
         self.button_mode_toggle = self.get_parameter('button_mode_toggle').value
         self.axis_linear = self.get_parameter('axis_linear').value
         self.axis_angular = self.get_parameter('axis_angular').value

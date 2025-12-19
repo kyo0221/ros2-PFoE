@@ -1,30 +1,19 @@
-# PFoE System Parameters
-
-# Joy node (gamepad driver)
 joy_node:
   ros__parameters:
     autorepeat_rate: 3.0
 
-# Feature extractor node
-feature_extractor:
-  ros__parameters:
-    # No parameters needed (GPU required, image size fixed to 85x85)
-
-# Joy controller node
 joy_controller:
   ros__parameters:
-    linear_scale: 0.8         # Maximum linear velocity [m/s]
-    angular_scale: 1.0      # Maximum angular velocity [rad/s] (≈π/32)
+    linear_vel: 0.8         # [m/s]
+    angular_vel: 1.0      # [rad/s]
     button_mode_toggle: 6     # Button to toggle teaching/replay mode
-    axis_linear: 1            # Joystick axis for linear velocity (forward/backward)
-    axis_angular: 3           # Joystick axis for angular velocity (yaw control)
+    axis_linear: 1
+    axis_angular: 3
 
-# Logger node
 logger:
   ros__parameters:
     bag_directory: "~/.ros/pfoe_bags"
 
-# Replay node
 replay:
   ros__parameters:
     num_particles: 1000
