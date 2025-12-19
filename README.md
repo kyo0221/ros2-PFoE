@@ -1,4 +1,4 @@
-# PFoE - Particle Filter on Episode for ROS2
+# Particle Filter on Episode for ROS2
 
 視覚ベースの教示再生システム。カメラ画像から抽出した特徴量を用いたParticle Filter on Episode実装。
 
@@ -71,7 +71,7 @@ bag_file: ""            # 指定bagファイル (省略可)
 
 ## 参考
 
-- [raspimouse_gamepad_teach_and_replay](https://github.com/rt-net/raspimouse_gamepad_teach_and_replay)
+- [raspimouse_gamepad_teach_and_replay](https://github.com/ryuichiueda/raspimouse_gamepad_teach_and_replay)
 
 ## ライセンス
 
