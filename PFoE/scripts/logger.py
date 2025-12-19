@@ -40,28 +40,22 @@ class Logger(Node):
         self.get_logger().info(f'Bag directory: {self.bag_directory}')
 
     def feature_callback(self, msg):
-        """Store latest feature vector"""
         self.current_feature = list(msg.data)
 
     def cmd_vel_callback(self, msg):
-        """Store latest cmd_vel"""
         self.current_cmd_vel = msg
 
     def teaching_mode_toggle_callback(self, msg):
-        """Toggle teaching mode on/off"""
         new_mode = msg.data
 
         if new_mode and not self.teaching_mode:
-            # Start teaching mode
             self.start_recording()
-            # Stop replay mode
             replay_msg = Bool()
             replay_msg.data = False
             self.replay_mode_pub.publish(replay_msg)
+
         elif not new_mode and self.teaching_mode:
-            # Stop teaching mode
             self.stop_recording()
-            # Start replay mode
             replay_msg = Bool()
             replay_msg.data = True
             self.replay_mode_pub.publish(replay_msg)
@@ -75,18 +69,14 @@ class Logger(Node):
 
         self.teaching_mode = new_mode
 
-        # Publish teaching mode state
         mode_msg = Bool()
         mode_msg.data = self.teaching_mode
         self.teaching_mode_pub.publish(mode_msg)
 
     def start_recording(self):
-        """Start recording to bag file"""
-        # Generate bag filename with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         bag_path = os.path.join(self.bag_directory, f'teaching_{timestamp}')
 
-        # Create bag writer
         storage_options = rosbag2_py.StorageOptions(uri=bag_path, storage_id='sqlite3')
         converter_options = rosbag2_py.ConverterOptions(
             input_serialization_format='cdr',
@@ -103,20 +93,15 @@ class Logger(Node):
             serialization_format='cdr'
         )
         self.bag_writer.create_topic(topic_info)
-
-        # Store current bag path
         self.current_bag_path = bag_path
-
         self.get_logger().info(f'Started recording to: {bag_path}')
 
     def stop_recording(self):
-        """Stop recording and close bag file"""
         if self.bag_writer is not None:
             del self.bag_writer
             self.bag_writer = None
             self.get_logger().info('Stopped recording')
 
-            # Publish bag path for replay node
             if self.current_bag_path:
                 bag_path_msg = String()
                 bag_path_msg.data = self.current_bag_path
@@ -124,25 +109,21 @@ class Logger(Node):
                 self.get_logger().info(f'Published bag path: {self.current_bag_path}')
 
     def record_event(self):
-        """Record current state as Event message"""
         if not self.teaching_mode:
             return
 
         if len(self.current_feature) == 0:
-            # No feature available yet
+            self.get_logger().warn(f"No image feature （self.current_feature : 0）")
             return
 
-        # Create Event message
         event = Event()
         event.feature = self.current_feature
         event.linear_x = float(self.current_cmd_vel.linear.x)
         event.angular_z = float(self.current_cmd_vel.angular.z)
         event.timestamp = self.get_clock().now().to_msg()
 
-        # Publish event
         self.event_pub.publish(event)
 
-        # Write to bag file
         if self.bag_writer is not None:
             self.bag_writer.write(
                 '/event',
@@ -151,7 +132,6 @@ class Logger(Node):
             )
 
     def destroy_node(self):
-        """Cleanup on shutdown"""
         self.stop_recording()
         super().destroy_node()
 
