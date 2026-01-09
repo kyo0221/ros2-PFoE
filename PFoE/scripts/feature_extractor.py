@@ -20,7 +20,7 @@ class FeatureExtractor(Node):
         self.declare_parameter('model_path', '')
         model_path = self.get_parameter('model_path').value
 
-        package_dir = get_package_share_directory('PFoE')
+        package_dir = get_package_share_directory('pfoe')
         model_path = os.path.join(package_dir, 'weights', 'placenet.pt')
         
         self.device = torch.device('cuda')
